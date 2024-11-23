@@ -2,6 +2,7 @@ package de.tum.vardoc;
 
 import com.intellij.codeInsight.intention.IntentionAction;
 import com.intellij.codeInsight.intention.PsiElementBaseIntentionAction;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.impl.ImaginaryEditor;
 import com.intellij.openapi.project.Project;
@@ -83,6 +84,10 @@ final class ConditionalOperatorConverter extends PsiElementBaseIntentionAction i
         suggestionList.addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
+                VardocService myService = ApplicationManager.getApplication().getService(VardocService.class);
+
+                myService.print(project);
+
                 if (e.getKeyCode() == KeyEvent.VK_ENTER) {
                     String selectedValue = suggestionList.getSelectedValue();
                     if (selectedValue != null) {
