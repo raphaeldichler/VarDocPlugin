@@ -8,12 +8,18 @@ import com.intellij.openapi.ui.popup.JBPopupFactory;
 import com.intellij.psi.*;
 import com.intellij.psi.codeStyle.CodeStyleManager;
 import com.intellij.psi.util.PsiTreeUtil;
+import com.intellij.ui.components.JBScrollPane;
+import com.intellij.ui.table.JBTable;
 import com.intellij.util.Consumer;
 import com.intellij.util.IncorrectOperationException;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -54,18 +60,43 @@ final class ConditionalOperatorConverter extends PsiElementBaseIntentionAction i
     public void invoke(@NotNull Project project, Editor editor, @NotNull PsiElement element)
             throws IncorrectOperationException {
 
-        // One way to show a list.
-        JBPopupFactory
-                .getInstance()
-                .createListPopup(new MyList(
-            // Another way to show a list, using the builder.
-            JBPopupFactory
-                    .getInstance()
-                    .createPopupChooserBuilder(new ArrayList<>(List.of("one", "two", "three")))
-                    .setTitle("PopupChooserBuilder")
-                    .setItemChosenCallback(c -> System.out.println("Callback " + c))
-              .createPopup()))
-        .showInBestPositionFor(editor);
+        // Create a DefaultTableModel with data and column names
+        DefaultTableModel tableModel = new DefaultTableModel(
+                new Object[][] {
+                        {"1", "Alice", "Engineer"},
+                        {"2", "Bob", "Designer"},
+                        {"3", "Charlie", "Manager"}
+                },
+                new Object[] {"ID", "Name", "Role"}
+        );
+
+        // Create the JBTable with the TableModel
+        JBTable table = new JBTable(tableModel, null);
+        table.setAutoResizeMode(JBTable.AUTO_RESIZE_ALL_COLUMNS); // Optional: Resize columns to fit
+
+        // Add a mouse listener for row click
+        table.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent event) {
+                int selectedRow = table.getSelectedRow();
+                if (selectedRow != -1) {
+                    String selectedName = table.getValueAt(selectedRow, 1).toString();
+                    JOptionPane.showMessageDialog(null, "You selected: " + selectedName);
+                }
+            }
+        });
+        // Wrap the JBTable in a JBScrollPane
+        JBScrollPane scrollPane = new JBScrollPane(table);
+
+
+        // Display the table in a popup
+        JBPopupFactory.getInstance()
+                .createComponentPopupBuilder(scrollPane, null)
+                .setTitle("Employee Details")
+                .setResizable(true)
+                .setMovable(true)
+                .createPopup()
+                        .showInBestPositionFor(editor);
 
         System.out.println("Invoke");
     }

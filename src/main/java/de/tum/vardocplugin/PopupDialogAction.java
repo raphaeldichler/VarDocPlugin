@@ -10,7 +10,5 @@ public class PopupDialogAction extends AnAction {
     @Override
     public void actionPerformed(@NotNull AnActionEvent e) {
         System.out.println("My silly action");
-        int foo = 1;
-
     }
 }
