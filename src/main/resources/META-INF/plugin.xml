@@ -32,27 +32,13 @@
             <className>de.tum.vardoc.ConditionalOperatorConverter</className>
             <category>SDK intentions</category>
         </intentionAction>
+        <postStartupActivity implementation="de.tum.vardoc.OnStartup"/>
     </extensions>
+
+
+
+
     <actions>
-        <action
-                id="de.tum.vardoc.PopupDialogAction"
-                class="de.tum.vardoc.PopupDialogAction"
-                text="Pop Dialog Action"
-                description="Wow description">
-            <add-to-group group-id="ToolsMenu" anchor="first"/>
-        </action>
-        <action
-                id="de.tum.vardoc.DropdownTableAction"
-                class="de.tum.vardoc.DropdownTableAction"
-                text="DropDown Table"
-                description="This opens a dropdown table">
-            <add-to-group group-id="ToolsMenu" anchor="first"/>
-        </action>
-        <action id="IdentifyAndActOnElement"
-                class="de.tum.vardoc.IdentifyAndActOnElementAction"
-                text="Identify Element"
-                description="Identify the element under the cursor">
-            <keyboard-shortcut keymap="$default" first-keystroke="alt ENTER"/>
-        </action>
+
     </actions>
 </idea-plugin>
