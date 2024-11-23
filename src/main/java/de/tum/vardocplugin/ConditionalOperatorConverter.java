@@ -54,8 +54,6 @@ final class ConditionalOperatorConverter extends PsiElementBaseIntentionAction i
     public void invoke(@NotNull Project project, Editor editor, @NotNull PsiElement element)
             throws IncorrectOperationException {
 
-        // One way to show a list.
-
 
         System.out.println("Invoke");
     }
