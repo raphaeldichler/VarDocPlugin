@@ -3,15 +3,16 @@ package de.tum.vardoc;
 import com.intellij.codeInsight.intention.IntentionAction;
 import com.intellij.codeInsight.intention.PsiElementBaseIntentionAction;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.impl.ImaginaryEditor;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.popup.JBPopup;
 import com.intellij.openapi.ui.popup.JBPopupFactory;
-import com.intellij.psi.*;
+import com.intellij.psi.PsiElement;
+import com.intellij.psi.PsiVariable;
 import com.intellij.refactoring.rename.RenameProcessor;
 import com.intellij.ui.components.JBList;
-
 import com.intellij.util.IncorrectOperationException;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
@@ -35,7 +36,7 @@ final class ConditionalOperatorConverter extends PsiElementBaseIntentionAction i
      *
      * <p>Note: this method must do its checks quickly and return.</p>
      *
-     * @param project a reference to the Project object being edited.
+     * @param project a reference to the VardocProject object being edited.
      * @param editor  a reference to the object editing the project source
      * @param element a reference to the PSI element currently under the caret
      * @return {@code true} if the caret is in a literal string element, so this functionality should be added to the
@@ -46,7 +47,7 @@ final class ConditionalOperatorConverter extends PsiElementBaseIntentionAction i
             return false;
         }
 
-        return true;
+        return true; // Element doesn't support renaming
     }
 
     /**
@@ -54,7 +55,7 @@ final class ConditionalOperatorConverter extends PsiElementBaseIntentionAction i
      * If the ternary is part of a declaration, the declaration is separated and moved above the if-then-else statement.
      * Called when user selects this intention action from the available intentions list.
      *
-     * @param project a reference to the Project object being edited.
+     * @param project a reference to the VardocProject object being edited.
      * @param editor  a reference to the object editing the project source
      * @param element a reference to the PSI element currently under the caret
      * @throws IncorrectOperationException Thrown by underlying (PSI model) write action context
@@ -67,7 +68,7 @@ final class ConditionalOperatorConverter extends PsiElementBaseIntentionAction i
         }
 
         // todo: replace with real suggestions
-        String[] suggestions = {"Suggestion 1", "Suggestion 2", "Suggestion 3", "Suggestion 4"};
+        String[] suggestions = {"Suggestion1", "Suggestion2", "Suggestion3", "Suggestion4"};
 
         JBList<String> suggestionList = new JBList<>(suggestions);
         suggestionList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
@@ -81,31 +82,41 @@ final class ConditionalOperatorConverter extends PsiElementBaseIntentionAction i
                 .setMovable(false)
                 .createPopup();
 
+
         suggestionList.addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
-                VardocService myService = ApplicationManager.getApplication().getService(VardocService.class);
-
-                myService.print(project);
 
                 if (e.getKeyCode() == KeyEvent.VK_ENTER) {
                     String selectedValue = suggestionList.getSelectedValue();
-                    if (selectedValue != null) {
-                        // todo do a replace with the suggested value
-                        System.out.println("Selected: " + selectedValue);
-                        if (element instanceof PsiNamedElement) {
-                            System.out.println("is named element");
 
-                            RenameProcessor renameProcessor = new RenameProcessor(
-                                    project,
-                                    element,
-                                    selectedValue,
-                                    false, // Set to true if you want to search for text occurrences
-                                    false  // Set to true if you want to rename test sources as well
-                            );
-                            renameProcessor.run();
+                    if (selectedValue != null) {
+
+                        var pa = element.getParent();
+                        if (pa instanceof PsiVariable variable) {
+                            ApplicationManager.getApplication().invokeLater(() -> {
+                                WriteCommandAction.runWriteCommandAction(project, () -> {
+                                    try {
+                                        RenameProcessor renameProcessor = new RenameProcessor(
+                                                project,
+                                                variable,
+                                                selectedValue,
+                                                false,
+                                                false
+                                        );
+                                        // Use invokeLater to avoid blocking EDT during the rename
+                                        ApplicationManager.getApplication().invokeLater(renameProcessor::run);
+                                    } catch (Exception ex) {
+                                        // Handle potential exceptions gracefully
+                                        ex.printStackTrace();
+                                    }
+                                });
+                            });
+
                         }
+
                     }
+
                     popup.cancel();
                 }
             }

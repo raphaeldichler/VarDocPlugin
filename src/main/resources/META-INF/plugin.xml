@@ -32,6 +32,7 @@
             <className>de.tum.vardoc.ConditionalOperatorConverter</className>
             <category>SDK intentions</category>
         </intentionAction>
+        <postStartupActivity implementation="de.tum.vardoc.OnStartup"/>
     </extensions>
     <actions>
 
