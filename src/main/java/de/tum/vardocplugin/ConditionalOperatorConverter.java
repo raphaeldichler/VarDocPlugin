@@ -55,17 +55,7 @@ final class ConditionalOperatorConverter extends PsiElementBaseIntentionAction i
             throws IncorrectOperationException {
 
         // One way to show a list.
-        JBPopupFactory
-                .getInstance()
-                .createListPopup(new MyList(
-            // Another way to show a list, using the builder.
-            JBPopupFactory
-                    .getInstance()
-                    .createPopupChooserBuilder(new ArrayList<>(List.of("one", "two", "three")))
-                    .setTitle("PopupChooserBuilder")
-                    .setItemChosenCallback(c -> System.out.println("Callback " + c))
-              .createPopup()))
-        .showInBestPositionFor(editor);
+
 
         System.out.println("Invoke");
     }
