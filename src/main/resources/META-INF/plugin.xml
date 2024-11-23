@@ -34,7 +34,12 @@
         </intentionAction>
         <postStartupActivity implementation="de.tum.vardoc.OnStartup"/>
     </extensions>
+
+
+
+
     <actions>
+
 
     </actions>
 </idea-plugin>
