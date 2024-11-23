@@ -3,26 +3,25 @@ package de.tum.vardoc;
 import com.intellij.codeInsight.intention.IntentionAction;
 import com.intellij.codeInsight.intention.PriorityAction;
 import com.intellij.codeInsight.intention.PsiElementBaseIntentionAction;
+
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.command.WriteCommandAction;
-
 import com.intellij.openapi.editor.Editor;
-
-
+import com.intellij.openapi.editor.impl.ImaginaryEditor;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.popup.JBPopup;
 import com.intellij.openapi.ui.popup.JBPopupFactory;
-import com.intellij.psi.*;
+import com.intellij.openapi.util.IconLoader;
 
+import com.intellij.psi.*;
+import com.intellij.psi.PsiVariable;
 
 import com.intellij.refactoring.rename.RenameProcessor;
-import com.intellij.psi.PsiVariable;
-import com.intellij.ui.components.JBList;
 
+import com.intellij.ui.components.JBList;
 
 import com.intellij.util.IncorrectOperationException;
 
-import org.apache.log4j.Priority;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -53,11 +52,8 @@ final class ConditionalOperatorConverter extends PsiElementBaseIntentionAction i
      * intention menu or {@code false} for all other types of caret positions
      */
     public boolean isAvailable(@NotNull Project project, Editor editor, @Nullable PsiElement element) {
-        //element should not be null and parent should be PsiVariable
-        System.out.println("Element Text -------" + element.getText());
-        System.out.println("Element Type -------" + element.getChildren().getClass().getName());
         return (element.getParent() instanceof PsiVariable) || (element.getParent() instanceof PsiMethod)
-                ||(element.getParent() instanceof PsiReferenceExpression) ;
+                || (element.getParent() instanceof PsiReferenceExpression);
     }
 
     /**
@@ -73,7 +69,10 @@ final class ConditionalOperatorConverter extends PsiElementBaseIntentionAction i
      */
     @Override
     public void invoke(@NotNull Project project, Editor editor, @NotNull PsiElement element) {
-        // todo: replace with real suggestions
+        if (editor instanceof ImaginaryEditor) {
+            return;
+        }
+
         String[] suggestions = {"Suggestion1", "Suggestion2", "Suggestion3", "Suggestion4"};
 
         JBList<String> suggestionList = new JBList<>(suggestions);
@@ -81,7 +80,6 @@ final class ConditionalOperatorConverter extends PsiElementBaseIntentionAction i
         suggestionList.setSelectedIndex(0); // Default selection
 
 
-        // todo: if time, solve deprecated
         JBPopup popup = JBPopupFactory.getInstance()
                 .createListPopupBuilder(suggestionList)
                 .setRequestFocus(true)
@@ -135,17 +133,13 @@ final class ConditionalOperatorConverter extends PsiElementBaseIntentionAction i
                             true,
                             true
                     );
-                    // Verwende invokeLater, um den EDT nicht zu blockieren
                     ApplicationManager.getApplication().invokeLater(renameProcessor::run);
                 } catch (Exception ex) {
-                    // Fehler behandeln
                     ex.printStackTrace();
                 }
             });
         });
     }
-
-
 
 
     /**
