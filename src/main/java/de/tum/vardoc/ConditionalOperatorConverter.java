@@ -86,9 +86,10 @@ final class ConditionalOperatorConverter extends PsiElementBaseIntentionAction i
             public void keyPressed(KeyEvent e) {
                 VardocService myService = ApplicationManager.getApplication().getService(VardocService.class);
 
-                myService.print(project);
+
 
                 if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+                    myService.print(project);
                     String selectedValue = suggestionList.getSelectedValue();
                     if (selectedValue != null) {
                         // todo do a replace with the suggested value
