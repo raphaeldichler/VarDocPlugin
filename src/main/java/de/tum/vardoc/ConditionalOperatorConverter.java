@@ -1,21 +1,25 @@
-package de.tum.vardocplugin;
+package de.tum.vardoc;
 
 import com.intellij.codeInsight.intention.IntentionAction;
 import com.intellij.codeInsight.intention.PsiElementBaseIntentionAction;
 import com.intellij.openapi.editor.Editor;
+import com.intellij.openapi.editor.impl.ImaginaryEditor;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.ui.popup.JBPopup;
 import com.intellij.openapi.ui.popup.JBPopupFactory;
 import com.intellij.psi.*;
-import com.intellij.psi.codeStyle.CodeStyleManager;
-import com.intellij.psi.util.PsiTreeUtil;
-import com.intellij.util.Consumer;
+import com.intellij.refactoring.rename.RenameProcessor;
+import com.intellij.ui.components.JBList;
+
 import com.intellij.util.IncorrectOperationException;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.List;
+import javax.swing.*;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+
 
 /**
  * Implements an intention action to replace a ternary statement with if-then-else.
@@ -37,6 +41,10 @@ final class ConditionalOperatorConverter extends PsiElementBaseIntentionAction i
      * intention menu or {@code false} for all other types of caret positions
      */
     public boolean isAvailable(@NotNull Project project, Editor editor, @Nullable PsiElement element) {
+        if (element == null) {
+            return false;
+        }
+
         return true;
     }
 
@@ -51,13 +59,55 @@ final class ConditionalOperatorConverter extends PsiElementBaseIntentionAction i
      * @throws IncorrectOperationException Thrown by underlying (PSI model) write action context
      *                                     when manipulation of the PSI tree fails.
      */
-    public void invoke(@NotNull Project project, Editor editor, @NotNull PsiElement element)
-            throws IncorrectOperationException {
+    public void invoke(@NotNull Project project, Editor editor, @NotNull PsiElement element) {
+        if (editor instanceof ImaginaryEditor) {
+            // Skip popup creation during intention preview
+            return;
+        }
 
+        // todo: replace with real suggestions
+        String[] suggestions = {"Suggestion 1", "Suggestion 2", "Suggestion 3", "Suggestion 4"};
 
-        System.out.println("Invoke");
+        JBList<String> suggestionList = new JBList<>(suggestions);
+        suggestionList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        suggestionList.setSelectedIndex(0); // Default selection
+
+        // todo: if time, solve deprecated
+        JBPopup popup = JBPopupFactory.getInstance()
+                .createListPopupBuilder(suggestionList)
+                .setRequestFocus(true)
+                .setResizable(false)
+                .setMovable(false)
+                .createPopup();
+
+        suggestionList.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent e) {
+                if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+                    String selectedValue = suggestionList.getSelectedValue();
+                    if (selectedValue != null) {
+                        // todo do a replace with the suggested value
+                        System.out.println("Selected: " + selectedValue);
+                        if (element instanceof PsiNamedElement) {
+                            System.out.println("is named element");
+
+                            RenameProcessor renameProcessor = new RenameProcessor(
+                                    project,
+                                    element,
+                                    selectedValue,
+                                    false, // Set to true if you want to search for text occurrences
+                                    false  // Set to true if you want to rename test sources as well
+                            );
+                            renameProcessor.run();
+                        }
+                    }
+                    popup.cancel();
+                }
+            }
+        });
+
+        popup.showInBestPositionFor(editor);
     }
-
     /**
      * If this action is applicable, returns the text to be shown in the list of intention actions available.
      */
@@ -75,7 +125,7 @@ final class ConditionalOperatorConverter extends PsiElementBaseIntentionAction i
      */
     @NotNull
     public String getFamilyName() {
-        return "SDK: Convert ternary operator to if statement";
+        return "VarDoc";
     }
 
 }
