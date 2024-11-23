@@ -1,21 +1,33 @@
 package de.tum.vardoc;
 
 import com.intellij.codeInsight.intention.IntentionAction;
+import com.intellij.codeInsight.intention.PriorityAction;
 import com.intellij.codeInsight.intention.PsiElementBaseIntentionAction;
+
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.command.WriteCommandAction;
+import com.intellij.openapi.diagnostic.Logger;
+
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.impl.ImaginaryEditor;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.popup.JBPopup;
 import com.intellij.openapi.ui.popup.JBPopupFactory;
+import com.intellij.openapi.util.IconLoader;
+
 import com.intellij.psi.*;
+import com.intellij.psi.PsiVariable;
+
 import com.intellij.refactoring.rename.RenameProcessor;
+
 import com.intellij.ui.components.JBList;
 
 import com.intellij.util.IncorrectOperationException;
+
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
 
 import javax.swing.*;
 import java.awt.event.KeyAdapter;
@@ -26,7 +38,9 @@ import java.awt.event.KeyEvent;
  * Implements an intention action to replace a ternary statement with if-then-else.
  */
 @NonNls
-final class ConditionalOperatorConverter extends PsiElementBaseIntentionAction implements IntentionAction {
+final class ConditionalOperatorConverter extends PsiElementBaseIntentionAction implements IntentionAction, PriorityAction {
+
+    private static final Logger log = Logger.getInstance(ConditionalOperatorConverter.class);
 
     /**
      * Checks whether this intention is available at the caret offset in file - the caret must sit just before a "?"
@@ -45,8 +59,9 @@ final class ConditionalOperatorConverter extends PsiElementBaseIntentionAction i
         if (element == null) {
             return false;
         }
-
-        return true;
+        return (element.getParent() instanceof PsiVariable) ||
+                (element.getParent() instanceof PsiMethod) ||
+                (element.getParent() instanceof PsiReferenceExpression);
     }
 
     /**
@@ -60,26 +75,26 @@ final class ConditionalOperatorConverter extends PsiElementBaseIntentionAction i
      * @throws IncorrectOperationException Thrown by underlying (PSI model) write action context
      *                                     when manipulation of the PSI tree fails.
      */
+    @Override
     public void invoke(@NotNull Project project, Editor editor, @NotNull PsiElement element) {
         if (editor instanceof ImaginaryEditor) {
-            // Skip popup creation during intention preview
             return;
         }
 
-        // todo: replace with real suggestions
-        String[] suggestions = {"Suggestion 1", "Suggestion 2", "Suggestion 3", "Suggestion 4"};
+        String[] suggestions = {"Suggestion1", "Suggestion2", "Suggestion3", "Suggestion4"};
 
         JBList<String> suggestionList = new JBList<>(suggestions);
         suggestionList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         suggestionList.setSelectedIndex(0); // Default selection
 
-        // todo: if time, solve deprecated
+
         JBPopup popup = JBPopupFactory.getInstance()
                 .createListPopupBuilder(suggestionList)
                 .setRequestFocus(true)
                 .setResizable(false)
                 .setMovable(false)
                 .createPopup();
+
 
         suggestionList.addKeyListener(new KeyAdapter() {
             @Override
@@ -90,29 +105,51 @@ final class ConditionalOperatorConverter extends PsiElementBaseIntentionAction i
 
                 if (e.getKeyCode() == KeyEvent.VK_ENTER) {
                     String selectedValue = suggestionList.getSelectedValue();
-                    if (selectedValue != null) {
-                        // todo do a replace with the suggested value
-                        System.out.println("Selected: " + selectedValue);
-                        if (element instanceof PsiNamedElement) {
-                            System.out.println("is named element");
-
-                            RenameProcessor renameProcessor = new RenameProcessor(
-                                    project,
-                                    element,
-                                    selectedValue,
-                                    false, // Set to true if you want to search for text occurrences
-                                    false  // Set to true if you want to rename test sources as well
-                            );
-                            renameProcessor.run();
-                        }
+                    if (selectedValue == null) {
+                        popup.cancel();
                     }
-                    popup.cancel();
+
+                    var parent = element.getParent();
+                    if (parent instanceof PsiVariable variable) {
+                        renameElement(variable, selectedValue, project);
+                    }
+                    if (parent instanceof PsiMethod method) {
+                        renameElement(method, selectedValue, project);
+
+                    }
+                    if (parent instanceof PsiReferenceExpression referenceExpression) {
+                        renameElement(referenceExpression.resolve(), selectedValue, project);
+
+                    }
                 }
             }
+
+
         });
 
         popup.showInBestPositionFor(editor);
     }
+
+    private void renameElement(PsiElement element, String newName, Project project) {
+        ApplicationManager.getApplication().invokeLater(() -> {
+            WriteCommandAction.runWriteCommandAction(project, () -> {
+                try {
+                    RenameProcessor renameProcessor = new RenameProcessor(
+                            project,
+                            element,
+                            newName,
+                            true,
+                            true
+                    );
+                    ApplicationManager.getApplication().invokeLater(renameProcessor);
+                } catch (Exception ex) {
+                    log.warn(ex.getMessage());
+                }
+            });
+        });
+    }
+
+
     /**
      * If this action is applicable, returns the text to be shown in the list of intention actions available.
      */
@@ -133,4 +170,8 @@ final class ConditionalOperatorConverter extends PsiElementBaseIntentionAction i
         return "VarDoc";
     }
 
+    @Override
+    public @NotNull Priority getPriority() {
+        return Priority.HIGH;
+    }
 }
